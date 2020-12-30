@@ -1,0 +1,11 @@
+---
+- name: install openssh server & client
+  yum: 
+    name: 
+    - openssh-server
+    - openssh-clients
+    - nmap
+    - tmux
+    - net-tools
+    - git
+    state: latest
