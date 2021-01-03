@@ -1,0 +1,7 @@
+---
+- name: create and allow sudoers
+  template:
+    src: "../template/sudoers.j2"
+    dest: "/etc/sudoers.d/sudoers"
+    validate: 'visudo -cf %s'
+    mode: 0440

@@ -1,0 +1,12 @@
+---
+gateway: 192.168.1.254
+dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+ntpserver: 10.0.2.15
+
+server_groups:
+  - name: operations
+    groupid: 20000
+    sudo: true

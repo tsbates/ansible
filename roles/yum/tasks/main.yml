@@ -1,5 +1,5 @@
 ---
-- name: install openssh server & client
+- name: install yum packages
   yum: 
     name: 
     - openssh-server
@@ -8,4 +8,5 @@
     - tmux
     - net-tools
     - git
+    - pip
     state: latest

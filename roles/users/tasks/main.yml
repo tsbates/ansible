@@ -1,0 +1,5 @@
+---
+- name: Add user to operations group
+  user:
+    name: kickstart
+    group: operations

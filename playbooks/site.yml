@@ -1,9 +1,14 @@
 ---
 
-- hosts: all
+- hosts: infrastructure 
   gather_facts: False
 
   roles:
+  - interfaces
+  - groups
+  - users
+  - sudoers
   - common
   - yum
+  - pip
   - services
