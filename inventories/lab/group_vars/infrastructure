@@ -1,3 +1,2 @@
 ---
-ansible_managed: "#Ansible Managed"
 ansible_ssh_user: root
