@@ -1,7 +1,0 @@
----
-- name: configure interfaces
-  template:
-    src: "../template/ifcfg-enp0s3.j2"
-    dest: "/etc/sysconfig/network-scripts/ifcfg-enp0s3"
-    mode: 0644
-    owner: root

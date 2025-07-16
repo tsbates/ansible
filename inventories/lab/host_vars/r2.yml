@@ -1,0 +1,4 @@
+---
+expected_ospf_neighbors_ips:
+  - 1.1.1.1
+  - 6.6.6.6

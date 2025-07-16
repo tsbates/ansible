@@ -1,0 +1,3 @@
+---
+- import_playbook: check_ospf_neighbours.yml
+- import_playbook: check_bgp_neighbours.yml

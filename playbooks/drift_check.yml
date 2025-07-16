@@ -1,0 +1,21 @@
+---
+- name: Check config drift between baseline and running
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Load baseline
+      slurp:
+        src: "./network_configs/baseline/{{ inventory_hostname }}.cfg"
+      register: baseline_config
+
+    - name: Load running config
+      slurp:
+        src: "./network_configs/running/{{ inventory_hostname }}.cfg"
+      register: running_config
+
+    - name: Compare configs
+      assert:
+        that:
+          - baseline_config.content | b64decode == running_config.content | b64decode
+        fail_msg: "Config drift detected on {{ inventory_hostname }}"
+        success_msg: "No config drift detected on {{ inventory_hostname }}"

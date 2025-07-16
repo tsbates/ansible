@@ -1,0 +1,34 @@
+- name: Test connection to Cisco router
+  hosts: routers
+  gather_facts: no
+  tasks:
+
+    - name: Gather OSPF neighbors
+      cisco.ios.ios_command:
+        commands:
+          - show ip ospf neighbor
+      register: ospf_output
+
+    - name: Extract OSPF neighbor Router IDs
+      set_fact:
+        ospf_neighbor_ids: >-
+           {{
+             ospf_output.stdout_lines[0]
+             | reject('search', '^Neighbor ID')
+             | map('split')
+             | map('first')
+           }}
+
+    - name: Check OSPF neighbors are up
+      assert:
+        that:
+          - expected_ospf_neighbors_ips | difference(ospf_neighbor_ids) | length == 0
+        fail_msg: >
+          Missing OSPF neighbors: {{ expected_ospf_neighbors_ips | difference(ospf_neighbor_ids) }}.
+          Found: {{ ospf_neighbor_ids }}
+        success_msg: >
+          All expected OSPF neighbors are present: {{ ospf_neighbor_ids }}
+
+    - name: Debug output for QA
+      debug:
+        var: ospf_output.stdout_lines

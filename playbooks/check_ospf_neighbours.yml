@@ -1,0 +1,39 @@
+---
+- name: Verify OSPF Configuration
+  hosts: routers
+  gather_facts: no
+
+  tasks:
+    - name: Show OSPF Neighbors
+      cisco.ios.ios_command:
+        commands:
+          - show ip ospf neighbor
+      register: output
+
+    - name: Parse neighbor IP addresses from output lines
+      set_fact:
+        actual_ospf_neighbor_ips: []
+
+    - name: Extract OSPF neighbor IPs from CLI output
+      set_fact:
+        actual_ospf_neighbor_ips: "{{ actual_ospf_neighbor_ips + [item.split()[0]] }}"
+      loop: "{{ output.stdout_lines[0][1:] }}"
+
+    - name: Show unexpected neighbors with friendly messages
+      debug:
+        msg: "{{ item }} is present on the live device, but isn't defined in expected neighbors."
+      loop: "{{ actual_ospf_neighbor_ips | difference(expected_ospf_neighbors_ips) }}"
+      when: (actual_ospf_neighbor_ips | difference(expected_ospf_neighbors_ips)) | length > 0
+
+    - name: Assert OSPF neighbor IPs match expected list exactly
+      assert:
+        that:
+          - "(expected_ospf_neighbors_ips | difference(actual_ospf_neighbor_ips)) | length == 0"
+          - "(actual_ospf_neighbor_ips | difference(expected_ospf_neighbors_ips)) | length == 0"
+        fail_msg: | 
+          OSPF neighbor IP mismatch on {{ inventory_hostname }}.
+          Expected: {{ expected_ospf_neighbors_ips | to_nice_yaml(indent=2) }}
+          Found: {{ actual_ospf_neighbor_ips | to_nice_yaml(indent=2) }}
+          Missing: {{ expected_ospf_neighbors_ips | difference(actual_ospf_neighbor_ips) | to_nice_yaml(indent=2) }}
+          Unexpected: {{ actual_ospf_neighbor_ips | difference(expected_ospf_neighbors_ips) | to_nice_yaml(indent=2) }}
+        success_msg: "All defined OSPF neighbors exist and no unexpected neighbors were found"

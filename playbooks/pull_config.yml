@@ -1,0 +1,14 @@
+---
+- name: Pull current config from devices
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Get running config
+      ios_command:
+        commands: show running-config
+      register: output
+
+    - name: Save config to file
+      copy:
+        content: "{{ output.stdout[0] }}"
+        dest: "./network_configs/running/{{ inventory_hostname }}.cfg"
