@@ -1,0 +1,9 @@
+---
+vpn_name: "default_vpn"
+ike_version: 2
+transform_set_encryption_algorithm: "esp-256-aes"
+group_policy: "default_group_policy"
+lifetime: 14400
+peer_ip:
+local_ip: 
+pre_shared_key:
