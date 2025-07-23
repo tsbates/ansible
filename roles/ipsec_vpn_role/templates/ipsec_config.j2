@@ -1,0 +1,46 @@
+#interface: 
+#  version: 1.0
+#  description: IPsec VPN configuration template for Cisco devices
+
+# IPsec VPN Configuration Template
+# This template generates the configuration for an IPsec VPN on Cisco devices.
+
+# Define the variables used in the template
+# - vpn_name: Name of the VPN
+# - peer_ip: IP address of the VPN peer
+# - pre_shared_key: Pre-shared key for authentication
+# - transform_set: Transform set to be used for the VPN
+
+interface Tunnel0
+ description IPsec VPN Tunnel
+ ip address {{ vpn_config.tunnel_ip }} 255.255.255.0
+ tunnel source Lo0
+ tunnel mode ipsec ipv4
+ tunnel destination {{ vpn_config.peer_ip }}
+ tunnel protection ipsec profile {{ vpn_config.vpn_name }}_profile
+
+crypto ikev2 proposal {{ vpn_config.vpn_name }}_proposal
+ encryption aes-gcm-128
+ prf sha512
+ group 20
+
+crypto ikev2 policy {{ vpn_config.vpn_name }}_policy
+ proposal {{ vpn_config.vpn_name }}_proposal
+
+crypto ikev2 keyring {{ vpn_config.vpn_name }}_keyring
+ peer {{ vpn_config.peer_ip }}
+  address {{ vpn_config.peer_ip }}
+  pre-shared-key {{ vpn_config.pre_shared_key }}
+
+crypto ikev2 profile {{ vpn_config.vpn_name }}_profile
+ match identity remote address {{ vpn_config.peer_ip }}
+ authentication local pre-share
+ authentication remote pre-share
+ keyring local {{ vpn_config.vpn_name }}_keyring
+
+crypto ipsec transform-set {{ vpn_config.vpn_name }}_transform {{ transform_set_encryption_algorithm }}
+ mode tunnel
+
+crypto ipsec profile {{ vpn_config.vpn_name }}_profile
+ set transform-set {{ vpn_config.vpn_name }}_transform
+ set ikev2-profile {{ vpn_config.vpn_name }}_profile

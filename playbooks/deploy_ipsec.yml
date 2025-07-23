@@ -1,0 +1,7 @@
+- name: Deploy IPsec Tunnel
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+
+  roles:
+    - ipsec_vpn_role
