@@ -9,3 +9,22 @@ vpn_config:
   peer_ip: "1.1.1.1"  # IP address of the remote VPN peer
   pre_shared_key: "super_secret_key"  # Pre-shared key for authentication
   lifetime: 3600  # Lifetime of the IPsec SA
+
+bgp_bgp:
+  local_asn: 65510
+  bgp_peers:
+    - ip: 1.1.1.1
+      remote_as: 65510
+      update_source: Loopback0
+    - ip: 3.3.3.3
+      remote_as: 65510
+      update_source: Loopback0
+address_families:
+  - name: ipv4 unicast
+    redistribute_ospf: true
+    redistribute_ospf_process: 100
+    neighbors:
+      - ip: 1.1.1.1
+        activate: true
+      - ip: 3.3.3.3
+        activate: true

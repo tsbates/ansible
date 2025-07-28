@@ -1,0 +1,43 @@
+- name: Deploy BGP Configuration
+  hosts: all
+  gather_facts: false
+  connection: network_cli
+
+  vars:
+    # Flatten list of desired peer IPs for comparison later
+    desired_bgp_peer_ips: "{{ bgp_bgp.bgp_peers | map(attribute='ip') | list }}"
+
+  tasks:
+    - name: Include BGP configuration role
+      ansible.builtin.import_role:
+        name: bgp
+
+    - name: Show BGP Neighbors
+      cisco.ios.ios_command:
+        commands:
+          - show ip bgp summary
+      register: bgp_output
+
+    - name: Parse neighbor IP addresses from BGP output lines
+      ansible.builtin.set_fact:
+        actual_bgp_neighbor_ips: []
+
+    - name: Extract BGP neighbor IPs from CLI output
+      ansible.builtin.set_fact:
+        actual_bgp_neighbor_ips: "{{ actual_bgp_neighbor_ips + [item.split()[0]] }}"
+      loop: "{{ bgp_output.stdout_lines | default([]) | flatten }}"
+      when: item | length > 0 and item.split()[0] | regex_search('^\\d+\\.\\d+\\.\\d+\\.\\d+$')
+
+    - name: Determine stale peers
+      ansible.builtin.set_fact:
+        stale_bgp_peers: "{{ actual_bgp_neighbor_ips | difference(desired_bgp_peer_ips) }}"
+
+    - name: Debug commands to remove stale BGP peers
+      ansible.builtin.debug:
+        msg: "{{ stale_bgp_peers | map('regex_replace', '^(.*)$', 'no neighbor \\1') | list }}"
+
+    - name: Remove stale BGP peers
+      when: stale_bgp_peers | length > 0
+      cisco.ios.ios_config:
+        lines: "{{ stale_bgp_peers | map('regex_replace', '^(.*)$', 'no neighbor \\1') | list }}"
+        parents: "router bgp {{ bgp_bgp.local_asn }}"

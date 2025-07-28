@@ -1,0 +1,29 @@
+{% if bgp_bgp is defined %}
+router bgp {{ bgp_bgp.local_asn }}
+
+{% for peer in bgp_bgp.bgp_peers %}
+ neighbor {{ peer.ip }} remote-as {{ peer.remote_as }}
+ {% if peer.update_source is defined %}
+ neighbor {{ peer.ip }} update-source {{ peer.update_source }}
+ {% endif %}
+{% endfor %}
+
+{% if bgp_bgp.address_families is defined %}
+{% for af in bgp_bgp.address_families %}
+!
+address-family {{ af.name }}
+
+{% for nbr in af.neighbors %}
+ {% if nbr.activate | default(false) %}
+  neighbor {{ nbr.ip }} activate
+ {% endif %}
+{% endfor %}
+
+{% if af.redistribute_ospf | default(false) %}
+ redistribute ospf{% if af.redistribute_ospf_process is defined %} {{ af.redistribute_ospf_process }}{% endif %}
+{% endif %}
+
+exit-address-family
+{% endfor %}
+{% endif %}
+{% endif %}

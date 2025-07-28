@@ -1,0 +1,3 @@
+bgp_bgp:
+  bgp_local_asn: 65001
+  bgp_peers: []
