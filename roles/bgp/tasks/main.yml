@@ -1,0 +1,6 @@
+---
+- name: Configure BGP peers from template
+  ansible.netcommon.cli_config:
+    config: "{{ lookup('template', 'bgp_peers.j2') }}"
+  when: bgp_bgp is defined
+  notify: Save running config
