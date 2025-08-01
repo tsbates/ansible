@@ -1,0 +1,14 @@
+---
+- name: Configure users on Cisco IOS devices
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Create usernames based on group variables
+      cisco.ios.ios_user:
+        users:
+          - name: "{{ item.name }}"
+            configured_password: "{{ item.configured_password }}"
+        purge: true
+      loop: "{{ users }}"
+      no_log: true
