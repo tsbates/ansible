@@ -1,0 +1,17 @@
+[
+{% for peer in bgp_bgp.bgp_peers %}
+  {
+    "neighbor_address": "{{ peer.ip }}",
+    "remote_as": "{{ peer.remote_as }}",
+    "update_source": "{{ peer.update_source }}",
+    "activate": true,
+
+    {% if peer.next_hop_self is defined and peer.next_hop_self %}
+    "next_hop_self": {{ peer.next_hop_self | default(false) | to_json }}
+    {% endif %}
+    
+    }
+    {% if not loop.last %},
+    {% endif %}
+{% endfor %}
+]
