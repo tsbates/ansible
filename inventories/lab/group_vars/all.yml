@@ -1,0 +1,3 @@
+users:
+  - name: 'testuser'
+    configured_password: "testpassword"
