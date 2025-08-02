@@ -11,4 +11,4 @@
     - name: Save config to file
       copy:
         content: "{{ output.stdout[0] }}"
-        dest: "./network_configs/running/{{ inventory_hostname }}.cfg"
+        dest: "./configs/{{ inventory_hostname }}.cfg"
