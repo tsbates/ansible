@@ -1,0 +1,4 @@
+[submodule "configs"]
+	path = configs
+	url = git@github.com:tsbates/configs.git
+	branch = develop
