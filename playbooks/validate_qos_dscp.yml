@@ -1,0 +1,98 @@
+---
+- name: Full iperf3 DSCP test with start/stop and retries
+  hosts: all
+  gather_facts: false
+  vars:
+    iperf_server_ip: remote-server
+    iperf_client_ip: localhost
+    base_port: 5201
+    dscp_tests:
+      - { name: "ef", tos: 184 }
+      - { name: "cs6", tos: 192 }
+      - { name: "af11", tos: 40 }
+      - { name: "af31", tos: 104 }
+      - { name: "af41", tos: 136 }
+      - { name: "af21", tos: 72 }
+      - { name: "cs1", tos: 32 }
+
+  vars_prompt:
+    - name: "Iperf3 Server IP"
+      prompt: "Enter iperf3 server IP"
+      private: false
+      default: "{{ iperf_server_ip }}"
+    - name: "Iperf3 Client IP"
+      prompt: "Enter iperf3 client IP"
+      private: false
+      default: "{{ iperf_client_ip }}"
+
+  tasks:
+    - name: Launch iperf3 servers async jobs on unique ports
+      delegate_to: "{{ iperf_server_ip }}"
+      ansible.builtin.command: "iperf3 -s -p {{ base_port | int + item.0 }}"
+      async: 3600
+      poll: 0
+      with_indexed_items: "{{ dscp_tests }}"
+      register: iperf_server_jobs
+      loop_control:
+        label: "{{ item.1.name }} (port {{ base_port | int + item.0 }})"
+      changed_when: false
+
+    - name: Pause 1s to let servers bind ports
+      ansible.builtin.pause:
+        seconds: 1
+
+    - name: Check if servers are running and get their PIDs
+      delegate_to: "{{ iperf_server_ip }}"
+      ansible.builtin.shell: "lsof -iTCP:{{ base_port | int + item.0 }} -sTCP:LISTEN -t || echo ''"
+      with_indexed_items: "{{ dscp_tests }}"
+      register: server_pids
+      loop_control:
+        label: "{{ item.1.name }} (port {{ base_port | int + item.0 }})"
+      changed_when: false
+
+    - name: Fail if any server not running
+      ansible.builtin.fail:
+        msg: "iperf3 server NOT running on port {{ base_port | int + item.0 }}"
+      when: server_pids.results[item.0].stdout == ''
+      with_indexed_items: "{{ dscp_tests }}"
+
+    - name: Run iperf3 client DSCP tests with retries on failure
+      delegate_to: "{{ iperf_client_ip }}"
+      retries: 3
+      delay: 2
+      register: iperf_results
+      until: iperf_results.rc == 0
+      ansible.builtin.command: >
+        iperf3 -c {{ iperf_server_ip }}
+        -p {{ base_port | int + item.0 }}
+        --tos {{ (item.1.tos | int) }}
+        -t 5
+      with_indexed_items: "{{ dscp_tests }}"
+      loop_control:
+        label: "{{ item.1.name }} (port {{ base_port | int + item.0 }})"
+      changed_when: false
+
+    - name: Display test results
+      ansible.builtin.debug:
+        var: "{{ iperf_results.results }}"
+      when: item.rc == 0
+      loop: "{{ iperf_results.results }}"
+      loop_control:
+        label: "{{ item.item.1.name }} (port {{ base_port | int + item.item.0 }})"
+
+    - name: Stop iperf3 servers by killing PIDs
+      delegate_to: "{{ iperf_server_ip }}"
+      ansible.builtin.command: "kill {{ item.stdout }}"
+      with_items: "{{ server_pids.results }}"
+      when: item.stdout | length > 0
+      failed_when: false
+      changed_when: item.stdout | length > 0
+
+    - name: Confirm servers stopped (should have no listening ports)
+      delegate_to: "{{ iperf_server_ip }}"
+      ansible.builtin.shell: "lsof -iTCP:{{ base_port | int + item.0 }} -sTCP:LISTEN -t || echo 'stopped'"
+      with_indexed_items: "{{ dscp_tests }}"
+      register: server_check_after_stop
+      loop_control:
+        label: "{{ item.1.name }} (port {{ base_port | int + item.0 }})"
+      changed_when: false
