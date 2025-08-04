@@ -1,19 +1,19 @@
 ---
 - name: Full iperf3 DSCP test with start/stop and retries
-  hosts: all 
+  hosts: all
   gather_facts: false
   vars:
     iperf_server_ip: remote-server
     iperf_client_ip: localhost
     base_port: 5201
     dscp_tests:
-      - { name: "ef",   tos: 184 }
-      - { name: "cs6",  tos: 192 }
-      - { name: "af11", tos: 40  }
+      - { name: "ef", tos: 184 }
+      - { name: "cs6", tos: 192 }
+      - { name: "af11", tos: 40 }
       - { name: "af31", tos: 104 }
       - { name: "af41", tos: 136 }
       - { name: "af21", tos: 72 }
-      - { name: "cs1",  tos: 32 }
+      - { name: "cs1", tos: 32 }
 
   vars_prompt:
     - name: "Iperf3 Server IP"
@@ -82,7 +82,7 @@
 
     - name: Stop iperf3 servers by killing PIDs
       delegate_to: "{{ iperf_server_ip }}"
-      ansible.builtin.shell: "kill {{ item.stdout }}"
+      ansible.builtin.command: "kill {{ item.stdout }}"
       with_items: "{{ server_pids.results }}"
       when: item.stdout | length > 0
       failed_when: false
